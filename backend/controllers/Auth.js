@@ -119,7 +119,7 @@ async function login (req,res){
             email
         }).populate("additionalDetails")
         if(!user){
-            // console.log(user)
+            console.log(user)
             return res.status(401).json({
                 success:false,
                 msg:"Invalid credentials!"
@@ -128,13 +128,30 @@ async function login (req,res){
 
         const pass=await brcypt.compare(password,user.password)
         if(pass){
-            const token=jwt.sign({email:user.email,id:user._id,role:user.role},process.env.JWT_SECRET,{expiresIn:'24h'})
+            const token = jwt.sign(
+                {
+                  email: user.email,
+                  id: user._id,
+                  role: user.role,
+                },
+                process.env.JWT_SECRET,
+                {
+                  expiresIn: '24h',
+                }
+              );
+              
             user.token=token
             user.password=undefined
             const options={
                 expires:new Date(Date.now()+3*24*60*60*1000),
+                // httpOnly: This property is set to true, indicating that the cookie should only be accessible through HTTP requests and
+                // not via client-side scripts. This is a security measure to help prevent cross-site scripting (XSS) attacks.
                 httpOnly:true,
             }
+
+
+            // Assuming 'res' is the response object
+            // res.cookie('yourCookieName', 'cookieValue', options);
             res.cookie("token",token,options).status(200).json({
                 success: true,
                 token,
@@ -181,6 +198,9 @@ async function sendotp(req,res){
         const result=await OTP.findOne({
             otp
         })
+        // If the database query (result) returns a non-null value (meaning the OTP already exists), 
+        // the while loop is entered. Inside the loop, a new OTP is generated, and the loop continues until 
+        // a unique OTP is generated (i.e., until the database query returns null, indicating that the generated OTP is not already in use).
         while(result){
             otp=otpGenerator.generate(6,{
                 upperCaseAlphabets:false,
@@ -205,12 +225,11 @@ async function sendotp(req,res){
 
 async function changePassword(req,res){
     try{
-        const userDetails=await User.findById(req.user.id)
-        const {oldPassword,newPassword}=req.body
-        const isPasswordMatch=await brcypt.compare(
-            oldPassword,
-            userDetails.password
-        )
+        // const userDetails=await User.findById(req.user.id)
+        const userDetails = await User.findById({_id:req.user.id} );
+        const oldPassword=req.body.oldPassword;
+        const newPassword=req.body.newPassword;
+        const isPasswordMatch=await brcypt.compare(oldPassword,userDetails.password)
         if(!isPasswordMatch){
             return res.status(401).json({
                 success:false,
@@ -219,7 +238,8 @@ async function changePassword(req,res){
         }
 
         const encryptedPassword=await brcypt.hash(newPassword,10)
-        const updatedUserDetails=await User.findByIdAndUpdate(req.user.id,{password:encryptedPassword},{new:true})
+        // { new: true }: This option ensures that the updated document is returned. Without this option, the method would return the document before the update.
+        const updatedUserDetails=await User.findByIdAndUpdate({_id:req.user.id},{password:encryptedPassword},{new:true})
 
         try{
             const emailResponse=await mailSender(updatedUserDetails.email,"Password for you account has been updated",

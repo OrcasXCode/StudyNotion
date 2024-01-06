@@ -1,4 +1,4 @@
-const User = require("../models/User")
+const {User} = require("../models/User")
 const mailSender = require("../utils/mailSender")
 const bcrypt = require("bcrypt")
 const crypto=require("crypto")
@@ -7,9 +7,7 @@ const crypto=require("crypto")
 async function resetPasswordToken(req,res){
     try{
         const email=req.body.email;
-        const user=await User.findOne({
-            email
-        })
+        const user=await User.findOne({email:email})
         if(!user){
             return res.status(401).json({
                 success:false,
@@ -19,14 +17,11 @@ async function resetPasswordToken(req,res){
 
         const token=crypto.randomBytes(20).toString("hex")
 
-        const updatedDetails=await User.findOneAndUpdate({
-            email
-        },{
-            token:token,
-            resetPasswordExpires:Date.now()+3600000
-        },{
-            new:true
-        })
+        const updatedDetails=await User.findOneAndUpdate(
+            {email},
+            {token:token,resetPasswordExpires:Date.now()+3600000},
+            {new:true}
+        )
         console.log("DETAILS",updatedDetails)
 
         const url = `http://localhost:3000/update-password/${token}`
@@ -39,6 +34,7 @@ async function resetPasswordToken(req,res){
         })
     }
     catch(error){
+        console.log(error)
         return res.status(500).json({
             error:error.message,
             success:false,
@@ -51,8 +47,8 @@ async function resetPasswordToken(req,res){
 async function resetPassword(req,res){
     try{
         const password=req.body.password;
-        const confirmPassword=req.body.confirmPasswordpassword;
-        const token=req.body.token;4
+        const confirmPassword=req.body.confirmPassword;
+        const token=req.body.token;
 
         if(confirmPassword!==password){
             return res.json({
