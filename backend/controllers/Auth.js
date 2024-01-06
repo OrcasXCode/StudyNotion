@@ -6,6 +6,7 @@ const { OTP } = require("../models/OTP");
 const Profile = require("../models/Profile")
 const mailSender = require("../utils/mailSender")
 const {passwordUpdated} = require("../mail/templates/passwordUpdate")
+const {sendOTP} =require("../mail/templates/sendOTP")
 require("dotenv").config()
 
 async function signup(req,res){
@@ -208,6 +209,7 @@ async function sendotp(req,res){
         }
         const otpPayload={email,otp}
         const otpBody=await OTP.create(otpPayload)
+        const sendOTPEmail=await mailSender(email,"OTP sent successfully",sendOTP(email,otp))
         res.status(200).json({
             success:true,
             msg:"OTP sent successfully",
