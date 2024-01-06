@@ -4,6 +4,8 @@ const { User } = require("../models/User");
 const otpGenerator=require("otp-generator");
 const { OTP } = require("../models/OTP");
 const Profile = require("../models/Profile")
+const mailSender = require("../utils/mailSender")
+const {passwordUpdated} = require("../mail/templates/passwordUpdate")
 require("dotenv").config()
 
 async function signup(req,res){
@@ -201,9 +203,57 @@ async function sendotp(req,res){
 }
 
 
+async function changePassword(req,res){
+    try{
+        const userDetails=await User.findById(req.user.id)
+        const {oldPassword,newPassword}=req.body
+        const isPasswordMatch=await brcypt.compare(
+            oldPassword,
+            userDetails.password
+        )
+        if(!isPasswordMatch){
+            return res.status(401).json({
+                success:false,
+                msg:'Old password does not match'
+            })
+        }
+
+        const encryptedPassword=await brcypt.hash(newPassword,10)
+        const updatedUserDetails=await User.findByIdAndUpdate(req.user.id,{password:encryptedPassword},{new:true})
+
+        try{
+            const emailResponse=await mailSender(updatedUserDetails.email,"Password for you account has been updated",
+            passwordUpdated(
+                updatedUserDetails.email,`Password updated successfully for ${updatedUserDetails.firstName} ${updatedUserDetails.lastName}`
+            ))
+        }
+        catch(error){
+            console.log("Error occured while sending email:",error)
+            return res.status(500).json({
+                succes:false,
+                msg:"Error occured while sending mail",
+                error:error.message
+            })
+        }
+        return res.status(200).json({
+            succes:true,
+            msg:"Password updated successfully"
+        })
+    }
+    catch(error){
+        console.error("Error occcured while updating password: ",error)
+        return res.status(500).json({
+            success: false,
+            msg: "Server error",
+            error:error.message
+        })
+    }
+}
+
 module.exports={
     signup,
     sendotp,
-    login
+    login,
+    changePassword
 }
 
