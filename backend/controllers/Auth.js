@@ -4,6 +4,7 @@ const { User } = require("../models/User");
 const otpGenerator=require("otp-generator");
 const { OTP } = require("../models/OTP");
 const Profile = require("../models/Profile")
+require("dotenv").config()
 
 async function signup(req,res){
     try{
@@ -100,6 +101,62 @@ async function signup(req,res){
 }
 
 
+async function login (req,res){
+    try{
+        const email=req.body.email;
+        const password=req.body.password;
+
+        if(!email || !password){
+            return res.status(400).json({
+                success: false,
+                msg:'Please provide an email and a password'
+            })
+        }
+
+        const user= await User.findOne({
+            email
+        }).populate("additionalDetails")
+        if(!user){
+            // console.log(user)
+            return res.status(401).json({
+                success:false,
+                msg:"Invalid credentials!"
+            });
+        }
+
+        const pass=await brcypt.compare(password,user.password)
+        if(pass){
+            const token=jwt.sign({email:user.email,id:user._id,role:user.role},process.env.JWT_SECRET,{expiresIn:'24h'})
+            user.token=token
+            user.password=undefined
+            const options={
+                expires:new Date(Date.now()+3*24*60*60*1000),
+                httpOnly:true,
+            }
+            res.cookie("token",token,options).status(200).json({
+                success: true,
+                token,
+                user,
+                msg:"User login success"
+            })
+        }
+        else{
+            return res.status(401).json({
+                succes:false,
+                msg:"Password is incorrect!"
+            })
+        }
+    }
+    catch(error){
+        console.error(error)
+        return res.status(500).json({
+            success:false,
+            msg:"Login failure Please try again"
+
+        })
+    }
+}
+
 async function sendotp(req,res){
     try{
         const email=req.body.email;
@@ -146,6 +203,7 @@ async function sendotp(req,res){
 
 module.exports={
     signup,
-    sendotp
+    sendotp,
+    login
 }
 

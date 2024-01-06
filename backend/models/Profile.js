@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+
+
+mongoose.connect("mongodb+srv://userdb:1234@cluster0.fqpdeka.mongodb.net/Study-Notion")
+
 // Define the Profile schema
 const profileSchema = new mongoose.Schema({
 	gender: {
