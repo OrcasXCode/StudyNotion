@@ -51,3 +51,8 @@ async function updateCourseProgress(req,res){
 
 
 //getProgressPercentage 
+
+
+module.exports={
+    updateCourseProgress
+}
