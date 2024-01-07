@@ -4,6 +4,7 @@ const userRoutes=require("../backend/routes/user")
 const dotenv=require("dotenv");
 const database=require("./config/database");
 const contactUsRoute = require("./routes/Contact")
+const profileRoutes=require("../backend/routes/Profile")
 const cookieParser=require("cookie-parser")
 
 app.use(express.json())
@@ -20,6 +21,7 @@ database.connect();
 
 
 app.use("/api/v1/auth",userRoutes);
+app.use("/api/v1/profile",profileRoutes)
 app.use("/api/v1/reach",contactUsRoute);
 
 
