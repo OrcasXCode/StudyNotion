@@ -2,7 +2,7 @@ const {User} = require("../models/User")
 const {Profile} = require("../models/Profile");
 const {Course}= require("../models/Course")
 const {CourseProgress} = require("../models/CourseProgress")
-const { default: mongoose } = require("mongoose");
+const  mongoose  = require("mongoose");
 const {uploadImageToCloudinary} = require("../config/cloudinary");
 const { convertSecondsToDuration } = require("../utils/secToDuration");
 
